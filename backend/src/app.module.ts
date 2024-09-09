@@ -1,30 +1,15 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { WinstonModule } from 'nest-winston';
-import * as winston from 'winston';
+import { Module, RequestMethod, MiddlewareConsumer } from '@nestjs/common';
+import { AuthModule } from './auth/auth.module';
+import { LoggerModule } from './logger/logger.module';
+import { LoggerMiddleware } from './middlewares/logger.middleware';
 
 @Module({
-  imports: [
-    WinstonModule.forRoot({
-      transports: [
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.prettyPrint(),
-          ),
-        }),
-        new winston.transports.File({
-          filename: 'logs/error.log',
-          level: 'error',
-        }),
-        new winston.transports.File({
-          filename: 'logs/combined.log',
-        }),
-      ],
-    }),
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [LoggerModule, AuthModule],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}

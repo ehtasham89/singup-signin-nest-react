@@ -1,18 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import helmet from 'helmet';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { helmetMiddleware } from './middlewares/helmet.middleware';
+import { rateLimitMiddleware } from './middlewares/rate-limit.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  app.use(
-    helmet({
-      contentSecurityPolicy: false,
-      crossOriginEmbedderPolicy: false,
-    })
-  );
 
   app.enableCors({
     origin: 'http://localhost:3000',
@@ -20,23 +12,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const rateLimiter = new RateLimiterMemory({
-    points: 5,
-    duration: 1,
-  });
+  helmetMiddleware(app);
+  rateLimitMiddleware(app);
 
-  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
-
-  app.use(async (req, res, next) => {
-    try {
-      await rateLimiter.consume(req.ip);
-      next();
-    } catch (err) {
-      res.status(429).send('Too many requests');
-    }
-  });
-
-  await app.listen(4000);
+  await app.listen(process.env.PORT || 4000);
 }
 
 bootstrap();
