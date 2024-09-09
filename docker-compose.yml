@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nestjs-app
+    ports:
+      - '4000:4000'
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mongodb+srv://root:forTestUsers@usersservice.xx37e.mongodb.net/user-service
+      - JWT_SECRET=myjwtsecret
+    command: npm run start:prod

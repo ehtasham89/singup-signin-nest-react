@@ -7,56 +7,72 @@ import { JwtService } from '@nestjs/jwt';
 import { validateOrReject } from 'class-validator';
 import { UserDto } from './dto/user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
-import { User } from './entities/user.entity';
+import { PrismaService } from '../../prisma/prisma.service';
+import * as bcrypt from 'bcryptjs'; // Import bcrypt for password hashing
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
-  private users: User[] = [];
-  private idCounter = 1;
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-  constructor(private readonly jwtService: JwtService) {}
-
-  async signup(userDto: UserDto): Promise<Omit<User, 'password'>> {
+  // Signup function to store users in MongoDB with Prisma
+  async signup(userDto: UserDto): Promise<Omit<UserDto, 'password'>> {
     await validateOrReject(userDto);
+    const { email, password } = userDto;
 
-    const { email } = userDto;
-
-    const existingUser = this.users.find((user) => user.email === email);
+    // Check if a user with the same email exists in the database
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
 
-    const newUser: User = {
-      id: this.idCounter++,
-      ...userDto,
-    };
+    // Hash the user's password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    this.users.push(newUser);
+    // Save the new user to the MongoDB database
+    const newUser = await this.prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: userDto.name,
+      },
+    });
 
+    // Return the user data without the password
     const result = { ...newUser };
     delete result.password;
     return result;
   }
 
+  // Login function to authenticate users and return JWT token
   async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string }> {
     const { email, password } = loginUserDto;
 
-    const user = this.users.find(
-      (user) => user.email === email && user.password === password,
-    );
+    // Find the user in the MongoDB database
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
 
-    if (!user) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Create JWT payload and sign the token
     const payload: JwtPayload = { email: user.email, sub: user.id };
     const accessToken = this.jwtService.sign(payload);
 
     return { accessToken };
   }
 
-  async validateUser(payload: JwtPayload): Promise<User | null> {
-    return this.users.find((user) => user.id === payload.sub) || null;
+  // Validate user by their JWT payload
+  async validateUser(payload: JwtPayload): Promise<UserDto | null> {
+    return await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
   }
 }
