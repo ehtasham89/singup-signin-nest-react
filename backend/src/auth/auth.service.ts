@@ -3,16 +3,23 @@ import {
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { validateOrReject } from 'class-validator';
 import { UserDto } from './dto/user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { User } from './entities/user.entity';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
   private users: User[] = [];
   private idCounter = 1;
 
+  constructor(private readonly jwtService: JwtService) {}
+
   async signup(userDto: UserDto): Promise<Omit<User, 'password'>> {
+    await validateOrReject(userDto);
+
     const { email } = userDto;
 
     const existingUser = this.users.find((user) => user.email === email);
@@ -32,7 +39,7 @@ export class AuthService {
     return result;
   }
 
-  async login(loginUserDto: LoginUserDto): Promise<Omit<User, 'password'>> {
+  async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string }> {
     const { email, password } = loginUserDto;
 
     const user = this.users.find(
@@ -43,8 +50,13 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const result = { ...user };
-    delete result.password;
-    return result;
+    const payload: JwtPayload = { email: user.email, sub: user.id };
+    const accessToken = this.jwtService.sign(payload);
+
+    return { accessToken };
+  }
+
+  async validateUser(payload: JwtPayload): Promise<User | null> {
+    return this.users.find((user) => user.id === payload.sub) || null;
   }
 }
