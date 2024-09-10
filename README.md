@@ -1,6 +1,6 @@
 # User Auth Service with React UI
 
-This project is a full-stack authentication service built using Node.js, React.js, JWT, MongoDB, and Prisma. It includes both backend services and a frontend UI, all containerized using Docker.
+This project is a full-stack authentication service built using Node.js, React.js, JWT, MongoDB, and Prisma. It includes both backend services and a frontend UI, all containerized using Docker. For backend e2e test: npm run test:e2e
 
 ## Stack
 
