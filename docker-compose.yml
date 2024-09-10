@@ -1,7 +1,19 @@
 version: '3.8'
 
 services:
-  app:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:4000
+    networks:
+      - app-network
+    depends_on:
+      - backend
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -13,3 +25,9 @@ services:
       - DATABASE_URL=mongodb+srv://root:forTestUsers@usersservice.xx37e.mongodb.net/user-service
       - JWT_SECRET=myjwtsecret
     command: npm run start:prod
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
