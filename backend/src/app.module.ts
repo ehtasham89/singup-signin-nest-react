@@ -8,7 +8,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // This makes the configuration available globally
+      isGlobal: true,
     }),
     LoggerModule,
     AuthModule,

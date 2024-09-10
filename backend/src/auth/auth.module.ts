@@ -8,8 +8,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 @Module({
   imports: [
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'yourSecretKey', // Ensure you set the secret key
-      signOptions: { expiresIn: '60s' }, // Optional: set token expiration time
+      secret: process.env.JWT_SECRET || 'yourSecretKey',
+      signOptions: { expiresIn: '60s' }, 
     }),
   ],
   controllers: [AuthController],

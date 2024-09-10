@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { validateOrReject } from 'class-validator';
 import { UserDto } from './dto/user.dto';
@@ -18,12 +19,10 @@ export class AuthService {
     private readonly prisma: PrismaService,
   ) {}
 
-  // Signup function to store users in MongoDB with Prisma
   async signup(userDto: UserDto): Promise<Omit<UserDto, 'password'>> {
     await validateOrReject(userDto);
     const { email, password } = userDto;
 
-    // Check if a user with the same email exists in the database
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -31,10 +30,8 @@ export class AuthService {
       throw new ConflictException('User with this email already exists');
     }
 
-    // Hash the user's password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Save the new user to the MongoDB database
     const newUser = await this.prisma.user.create({
       data: {
         email,
@@ -43,17 +40,17 @@ export class AuthService {
       },
     });
 
-    // Return the user data without the password
     const result = { ...newUser };
     delete result.password;
     return result;
   }
 
-  // Login function to authenticate users and return JWT token
-  async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string }> {
+  async login(
+    loginUserDto: LoginUserDto,
+    res: Response,
+  ): Promise<{ message?: string, accessToken?: string }> {
     const { email, password } = loginUserDto;
 
-    // Find the user in the MongoDB database
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -62,14 +59,24 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Create JWT payload and sign the token
     const payload: JwtPayload = { email: user.email, sub: user.id };
-    const accessToken = this.jwtService.sign(payload);
 
-    return { accessToken };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+
+    //HttpOnly cookie if 'res' is passed, a secure way to prevent XSS attacks
+    if (res) {
+      res.cookie('token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // https only if NODE_ENV is set to 'production'
+        sameSite: 'strict',
+        maxAge: 900000, // 15 minutes expiration
+      });
+      return { message: 'Login successful' };
+    } else {
+      return { accessToken };
+    }
   }
 
-  // Validate user by their JWT payload
   async validateUser(payload: JwtPayload): Promise<UserDto | null> {
     return await this.prisma.user.findUnique({
       where: { id: payload.sub },
