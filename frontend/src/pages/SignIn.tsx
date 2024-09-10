@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Box, Heading, Button } from '@chakra-ui/react';
+import { Heading, Button, Link, Text } from '@chakra-ui/react';
 import { useAuth } from './../contexts/AuthContext'; 
 import FormField from '../components/molecules/FormField';
+import AuthTemplate from '../components/templates/AuthTemplate';
 
 const schema = yup.object().shape({
   email: yup.string().email('Invalid email format').required('Email is required'),
@@ -38,14 +39,21 @@ const SignIn: React.FC = (props) => {
   
 
   return (
-    <Box>
-      <Heading>Sign In</Heading>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <FormField label="Email" placeholder="Email" {...register('email')} error={errors.email?.message} />
-        <FormField label="Password" placeholder="Password" type="password" {...register('password')} error={errors.password?.message} />
-        <Button type="submit" colorScheme="blue" mt={4}>Sign In</Button>
-      </form>
-    </Box>
+    <AuthTemplate>
+        <Heading>Sign In</Heading>
+        <form onSubmit={handleSubmit(onSubmit)}>
+            <FormField label="Email" placeholder="Email" {...register('email')} error={errors.email?.message} />
+            <FormField label="Password" placeholder="Password" type="password" {...register('password')} error={errors.password?.message} />
+            <Button type="submit" colorScheme="blue" mt={4}>Sign In</Button>
+        </form>
+
+        <Text mt={4}>
+            Don't have an account?{' '}
+            <Link as={RouterLink} to="/signup" color="teal.500">
+            Sign up here
+            </Link>
+        </Text>
+    </AuthTemplate>
   );
 };
 

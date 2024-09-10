@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Box, Heading, Button } from '@chakra-ui/react';
+import { Box, Heading, Button, Link, Text } from '@chakra-ui/react';
 import { useApi } from '../../hooks/useApi';
 import FormField from './../molecules/FormField';
 
@@ -56,6 +56,13 @@ const SignUpForm: React.FC = () => {
             <FormField label="Password" placeholder="Password" type="password" {...register('password')} error={errors.password?.message} />
             <Button type="submit" colorScheme="blue" mt={4}>Sign Up</Button>
         </form>
+
+        <Text mt={4}>
+            Don't have an account?{' '}
+            <Link as={RouterLink} to="/" color="teal.500">
+                Back to login
+            </Link>
+        </Text>
         </Box>
     );
 };

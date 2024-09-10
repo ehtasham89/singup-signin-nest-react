@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { Heading, Box, Button } from '@chakra-ui/react';
+import { Heading, Button } from '@chakra-ui/react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../contexts/AuthContext';
+import AuthTemplate from '../components/templates/AuthTemplate';
 
 
 const Dashboard: React.FC = () => {
@@ -28,7 +29,7 @@ const Dashboard: React.FC = () => {
       }, [isAuthenticated, user, callApi]); 
 
     return (
-        <Box>
+        <AuthTemplate>
             <Heading>Welcome to the application!</Heading>
                 {user && <p>Hello, {user.email}!</p>}
                 <Button
@@ -39,7 +40,7 @@ const Dashboard: React.FC = () => {
                 >
                     Logout
                 </Button>
-        </Box>
+        </AuthTemplate>
     );
 };
 
